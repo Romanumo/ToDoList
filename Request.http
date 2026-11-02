@@ -1,0 +1,26 @@
+@host = http://localhost:5065
+
+### Get all
+GET {{host}}
+
+### Get one
+GET {{host}}/1
+
+### Create
+POST {{host}}
+Content-Type: application/json
+
+{
+  "task": "Do the dishes"
+}
+
+### Update
+PUT {{host}}/2
+Content-Type: application/json
+
+{
+  "task": "Sleep"
+}
+
+### Delete
+DELETE {{host}}/1

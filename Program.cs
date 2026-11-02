@@ -1,54 +1,51 @@
 using TodoList.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+// Adding the singleton. Its if convenient as a centralized place to store service
+builder.Services.AddSingleton<TodoService>();
 var app = builder.Build();
+TodoSeeder.Seed(app.Services.GetRequiredService<TodoService>());
 
-List<TodoData> todoList = new List<TodoData>();
-
-todoList.Add(new TodoData("Clean up the room"));
-todoList.Add(new TodoData("Cook food"));
-
-app.MapGet("/", () =>
+app.MapGet("/", (TodoService service) =>
 {
-    String result = "";
-    for(int i = 0;i<todoList.Count;i++)
+    String text = "";
+    TodoData[] list = service.GetAll();
+    foreach(TodoData item in list)
     {
-        result += todoList[i].GetTask() + "\n";
+        text += item.GetTask() + "\n";
     }
-    return result;
+    return text;
 });
 
-app.MapGet("/{id}", (int id) =>
+app.MapGet("/{id}", (int id, TodoService service) =>
 {
-    TodoData? task = todoList.FirstOrDefault(t => t.id == id);
+    TodoData? task = service.Get(id);
     if(task == null) return Results.NotFound();
 
     return Results.Ok(task.GetTask());
 });
 
-app.MapPost("/", (TodoData addedTask) =>
+app.MapPost("/", (CreateTodoRequest addedTask, TodoService service) =>
 {
     if(addedTask == null || addedTask.task == "") return Results.BadRequest("Null Task");
 
-    todoList.Add(addedTask);
+    service.Add(addedTask.task);
     return Results.Ok($"Created task: {addedTask.task}");
 });
 
-app.MapPut("/{id}", (int id, TodoData changedTask) =>
+app.MapPut("/{id}", (UpdateTodoRequest changedTask, int id, TodoService service) =>
 {
-    TodoData? task = todoList.FirstOrDefault(t => t.id == id);
+    TodoData? task = service.Get(id);
     if(task == null) return Results.NotFound("Task with id:" + id + " doesnt exist");
 
     task.SetTask(changedTask.task);
-    return Results.Ok($"Changed task: {changedTask.task}");
+    return Results.Ok();
 });
 
-app.MapDelete("/{id}", (int id) =>
+app.MapDelete("/{id}", (int id, TodoService service) =>
 {
-    TodoData? task = todoList.FirstOrDefault(t => t.id == id);
-    if(task == null) return Results.Conflict("Task with id:" + id + " doesnt exist");
+    if(!service.Delete(id)) return Results.Conflict("Task with id:" + id + " doesnt exist");
 
-    todoList.Remove(task);
     return Results.NoContent();
 });
 

@@ -5,13 +5,11 @@ public class TodoData
     public String task {get; private set;}
     public int id {get;}
 
-    static int idCounter = 0;
 
-    public TodoData(String task)
+    public TodoData(String task, int id)
     {
         this.task = task;
-        id = idCounter;
-        idCounter++;
+        this.id = id;
     }
 
     public String GetTask() => "Task " + id + ": " + task;
@@ -19,5 +17,6 @@ public class TodoData
     public void SetTask(String task) => this.task = task;
 }
 
-public record UodateTodoRequest (int id, String task);
+// Simple DTO (Data Transfer Objects) - Tackles the boundary transfer of information
+public record UpdateTodoRequest (String task);
 public record CreateTodoRequest (String task);
