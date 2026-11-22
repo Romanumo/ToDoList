@@ -22,13 +22,14 @@ public class TodoService
         return item;
     }
 
-    public TodoData? Update(int id, String task)
+    public TodoData? Update(int id, String task, bool isFinished = false)
     {
-        // Get returns the reference to the data withing the list
+        // Get returns the reference to the data within the list
         var todoItem = Get(id);
         if(todoItem == null) return null;
 
         todoItem.SetTask(task);
+        todoItem.SetIsFinished(isFinished);
         return todoItem;
     }
 

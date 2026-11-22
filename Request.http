@@ -19,7 +19,16 @@ PUT {{host}}/todos/2
 Content-Type: application/json
 
 {
-  "task": "Sleep"
+  "task": "Sleep",
+  "isFinished": true
+}
+
+### ERROR PUT
+PUT {{host}}/todos/2
+Content-Type: application/json
+
+{
+  "isFinished": true
 }
 
 ### Delete

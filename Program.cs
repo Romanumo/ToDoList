@@ -22,7 +22,7 @@ var todos = app.MapGroup("/todos");
 todos.MapGet("/", (TodoService service) =>
 {
     // Returns JSON response
-    return service.GetAll().Select(t => new TodoResponse(t.id, t.task));
+    return service.GetAll().Select(t => new TodoResponse(t.id, t.task, t.isFinished));
 });
 
 todos.MapGet("/{id:int}", (int id, TodoService service) =>
@@ -30,20 +30,27 @@ todos.MapGet("/{id:int}", (int id, TodoService service) =>
     TodoData? task = service.Get(id);
     if(task == null) return Results.NotFound();
 
-    return TypedResults.Ok(new TodoResponse(task.id, task.task));
+    return TypedResults.Ok(new TodoResponse(task.id, task.task, task.isFinished));
 });
 
 todos.MapPost("/", (CreateTodoRequest addedTask, TodoService service) =>
 {
-    if(addedTask == null || String.IsNullOrWhiteSpace(addedTask.task)) return Results.BadRequest("Empty Task");
+    if(string.IsNullOrWhiteSpace(addedTask.task)) 
+        return Results.BadRequest("Empty Task");
 
     var item = service.Add(addedTask.task);
-    return TypedResults.Created($"/todos/{item.id}", new TodoResponse(item.id, item.task));
+    return TypedResults.Created($"/todos/{item.id}", new TodoResponse(item.id, item.task, item.isFinished));
 });
 
-todos.MapPut("/{id:int}", (UpdateTodoRequest changedTask, int id, TodoService service) =>
+todos.MapPut("/{id:int}", (int id, UpdateTodoRequest changedTask, TodoService service) =>
 {
-    TodoData? item = service.Update(id, changedTask.task);
+    if(string.IsNullOrWhiteSpace(changedTask.task)) 
+        return TypedResults.BadRequest("Title is required");
+
+    if(changedTask.isFinished is null) 
+        return TypedResults.BadRequest("Status is required");
+
+    TodoData? item = service.Update(id, changedTask.task, changedTask.isFinished.Value);
     if(item == null) return Results.NotFound(id);
     return TypedResults.NoContent();
 });
