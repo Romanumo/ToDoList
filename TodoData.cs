@@ -20,3 +20,4 @@ public class TodoData
 // Simple DTO (Data Transfer Objects) - Tackles the boundary transfer of information
 public record UpdateTodoRequest (String task);
 public record CreateTodoRequest (String task);
+public record TodoResponse (int id, String task);

@@ -5,7 +5,8 @@ namespace TodoList.Data;
 public class TodoService
 {
     private readonly ConcurrentDictionary<int, TodoData> items = new();
-    private int id;
+    
+    private int nextID;
 
     public TodoData? Get(int id) => items.TryGetValue(id, out var item) ? item : null;
 
@@ -15,8 +16,9 @@ public class TodoService
 
     public TodoData Add(String task)
     {
-        TodoData item = new TodoData(task, Interlocked.Increment(ref id));
-        items[id] = item;
+        var newID = Interlocked.Increment(ref nextID);
+        TodoData item = new TodoData(task, newID);
+        items[newID] = item;
         return item;
     }
 

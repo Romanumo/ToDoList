@@ -1,52 +1,58 @@
 using TodoList.Data;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
-// Adding the singleton. Its if convenient as a centralized place to store service
+
+// Adding the singleton. It is convenient as a centralized place to store service
 builder.Services.AddSingleton<TodoService>();
+builder.Services.AddOpenApi();
+
 var app = builder.Build();
+
+if(app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
+
 TodoSeeder.Seed(app.Services.GetRequiredService<TodoService>());
 
-app.MapGet("/", (TodoService service) =>
+var todos = app.MapGroup("/todos");
+
+todos.MapGet("/", (TodoService service) =>
 {
-    String text = "";
-    TodoData[] list = service.GetAll();
-    foreach(TodoData item in list)
-    {
-        text += item.GetTask() + "\n";
-    }
-    return text;
+    // Returns JSON response
+    return service.GetAll().Select(t => new TodoResponse(t.id, t.task));
 });
 
-app.MapGet("/{id}", (int id, TodoService service) =>
+todos.MapGet("/{id:int}", (int id, TodoService service) =>
 {
     TodoData? task = service.Get(id);
     if(task == null) return Results.NotFound();
 
-    return Results.Ok(task.GetTask());
+    return TypedResults.Ok(new TodoResponse(task.id, task.task));
 });
 
-app.MapPost("/", (CreateTodoRequest addedTask, TodoService service) =>
+todos.MapPost("/", (CreateTodoRequest addedTask, TodoService service) =>
 {
-    if(addedTask == null || addedTask.task == "") return Results.BadRequest("Null Task");
+    if(addedTask == null || String.IsNullOrWhiteSpace(addedTask.task)) return Results.BadRequest("Empty Task");
 
-    service.Add(addedTask.task);
-    return Results.Ok($"Created task: {addedTask.task}");
+    var item = service.Add(addedTask.task);
+    return TypedResults.Created($"/todos/{item.id}", new TodoResponse(item.id, item.task));
 });
 
-app.MapPut("/{id}", (UpdateTodoRequest changedTask, int id, TodoService service) =>
+todos.MapPut("/{id:int}", (UpdateTodoRequest changedTask, int id, TodoService service) =>
 {
-    TodoData? task = service.Get(id);
-    if(task == null) return Results.NotFound("Task with id:" + id + " doesnt exist");
-
-    task.SetTask(changedTask.task);
-    return Results.Ok();
+    TodoData? item = service.Update(id, changedTask.task);
+    if(item == null) return Results.NotFound(id);
+    return TypedResults.NoContent();
 });
 
-app.MapDelete("/{id}", (int id, TodoService service) =>
+todos.MapDelete("/{id:int}", (int id, TodoService service) =>
 {
-    if(!service.Delete(id)) return Results.Conflict("Task with id:" + id + " doesnt exist");
+    if(!service.Delete(id)) return Results.NotFound(id);
 
-    return Results.NoContent();
+    return TypedResults.NoContent();
 });
 
 app.Run();
